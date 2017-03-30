@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ScrybeConnectActivity extends Activity implements View.OnClickListener {
 
-    private final String TAG = "ScrybeConnect";
+    private static final String TAG = "ScrybeConnect";
     private BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     private BluetoothListener mBluetoothListener = new BluetoothListener();
 
@@ -100,6 +100,18 @@ public class ScrybeConnectActivity extends Activity implements View.OnClickListe
     }
 
     @Override
+    protected void onPause() {
+        mBluetoothAdapter.cancelDiscovery();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        mBluetoothAdapter.startDiscovery();
+        super.onResume();
+    }
+
+    @Override
     protected void onDestroy() {
         unregisterReceiver(mBluetoothListener);
         mBluetoothAdapter.cancelDiscovery();
@@ -115,6 +127,13 @@ public class ScrybeConnectActivity extends Activity implements View.OnClickListe
     public boolean onOptionsItemSelected(MenuItem item) {
         BluetoothDevice device = mDeviceCache[item.getItemId()];
         Log.d(TAG, "Selected " + device.getName() + " at " + device.getAddress());
+
+        Intent intent = new Intent();
+        //TODO: intent.setClass()
+        intent.putExtra(getString(R.string.EXTRA_BLUETOOTH_DEVICE), device);
+
+        startActivity(intent);
+
         return true;
     }
 
