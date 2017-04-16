@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">ScrybeListener</string>
+
+    <string name="waiting_for_connect">Waiting for connection&#8230;</string>
+    <string name="request_bluetooth">Please enable Bluetooth in settings.</string>
+    <string name="connected_to">Connected to</string>
+    <string name="action_settings">Settings</string>
+    <string name="send_text">Send</string>
+    <string name="transcript">View Transcript:</string>
+</resources>

@@ -47,6 +47,7 @@ public class ScrybeConnectActivity extends Activity implements View.OnClickListe
             String action = intent.getAction();
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                mmBluetoothDevices.add(device);
                 postUpdate(device);
                 mmDeviceCount++;
                 Log.d(TAG, "Discovered " + device.getName());
@@ -67,7 +68,7 @@ public class ScrybeConnectActivity extends Activity implements View.OnClickListe
         }
 
         public BluetoothDevice[] getDevices() {
-            return (BluetoothDevice[])mmBluetoothDevices.toArray();
+            return mmBluetoothDevices.toArray(new BluetoothDevice[0]);
         }
     }
 
@@ -101,13 +102,13 @@ public class ScrybeConnectActivity extends Activity implements View.OnClickListe
 
     @Override
     protected void onPause() {
-        mBluetoothAdapter.cancelDiscovery();
+        //mBluetoothAdapter.cancelDiscovery();
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        mBluetoothAdapter.startDiscovery();
+        //mBluetoothAdapter.startDiscovery();
         super.onResume();
     }
 
@@ -128,8 +129,7 @@ public class ScrybeConnectActivity extends Activity implements View.OnClickListe
         BluetoothDevice device = mDeviceCache[item.getItemId()];
         Log.d(TAG, "Selected " + device.getName() + " at " + device.getAddress());
 
-        Intent intent = new Intent();
-        //TODO: intent.setClass()
+        Intent intent = new Intent(getBaseContext(), TranscriptionActivity.class);
         intent.putExtra(getString(R.string.EXTRA_BLUETOOTH_DEVICE), device);
 
         startActivity(intent);
@@ -143,7 +143,11 @@ public class ScrybeConnectActivity extends Activity implements View.OnClickListe
         menu.clear();
         mDeviceCache = mBluetoothListener.getDevices();
         for (BluetoothDevice device : mDeviceCache) {
-            MenuItem item = menu.add(Menu.NONE, iDevice, iDevice, device.getName());
+            String name = device.getName();
+            if (name == null) {
+                name = "Unknown Device";
+            }
+            MenuItem item = menu.add(Menu.NONE, iDevice, iDevice, name);
             MenuUtils.setDescription(item, R.string.tap_to_connect);
             iDevice++;
         }

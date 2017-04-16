@@ -2,6 +2,7 @@
     <string name="app_name">Transcrybe</string>
     <string name="voice_trigger">start transcription</string>
     <string name="title_activity_scrybe_connect">Connect to Scrybe</string>
+    <string name="title_activity_transcription">Transcription</string>
     <string name="looking_connection">Looking for connections&#8230;</string>
     <string name="devices_found"> devices found. Tap to view list.</string>
     <string name="tap_to_connect">Tap to connect.</string>

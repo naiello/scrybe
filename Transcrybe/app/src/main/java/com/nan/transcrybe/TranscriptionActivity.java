@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -39,9 +40,10 @@ public class TranscriptionActivity extends Activity {
         View view = findViewById(R.id.transcribe_layout);
         mProgressSlider = Slider.from(view).startIndeterminate();
         mTranscriptionView = (TextView) findViewById(R.id.transcription_text);
+        mTranscriptionView.setMovementMethod(new ScrollingMovementMethod());
 
         // Start the Bluetooth listener and attempt to connect
-        BluetoothDevice device = bundle.getParcelable(getString(R.string.EXTRA_BLUETOOTH_DEVICE));
+        BluetoothDevice device = getIntent().getExtras().getParcelable(getString(R.string.EXTRA_BLUETOOTH_DEVICE));
         mListener = new TranscriptionListenerThread(device);
         mListener.start();
     }
@@ -49,6 +51,7 @@ public class TranscriptionActivity extends Activity {
     private void onConnected() {
         // we're connected, so display the "listening..." text
         mTranscriptionView.setText(R.string.listening);
+        mProgressSlider.hide();
     }
 
     private void onConnectFail() {
@@ -79,12 +82,22 @@ public class TranscriptionActivity extends Activity {
             Log.d(TAG, "Bluetooth listener created for " + device.getName());
         }
 
+        private void onReceive(final String line) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    TranscriptionActivity.this.onReceive(line);
+                }
+            });
+        }
+
         // TODO: Refactor this to make it shorter
         @Override
         public void run() {
             BluetoothSocket socket = null;
             try {
                 socket = mmBluetoothDevice.createRfcommSocketToServiceRecord(BT_UUID);
+                socket.connect();
             } catch (IOException e) {
                 Log.e(TAG, "Connection to SPP service failed");
             }
@@ -112,16 +125,14 @@ public class TranscriptionActivity extends Activity {
             try {
                 BufferedReader reader =
                         new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                String line;
+                String text;
 
-                while (socket.isConnected() && (line = reader.readLine()) != null) {
-                    Log.v(TAG, "recv: " + line);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            onReceive(line);
-                        }
-                    });
+                while (socket.isConnected()) {
+                    text = reader.readLine();
+                    if (text != null) {
+                        Log.v(TAG, "recv: " + text);
+                        onReceive(text);
+                    }
                 }
             } catch (IOException e) {
                 Log.e(TAG, "Bad read");
