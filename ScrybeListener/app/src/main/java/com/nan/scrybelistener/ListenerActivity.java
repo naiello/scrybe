@@ -4,13 +4,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioRecord;
-import android.media.AudioTrack;
-import android.media.MediaRecorder;
+import android.icu.text.AlphabeticIndex;
 import android.os.*;
-import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -20,8 +15,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -39,10 +34,8 @@ public class ListenerActivity extends ActionBarActivity {
     private TextView mTranscriptText;
     private EditText mMessageText;
     private Button mSendButton;
-    private Button mToggleAudioButton;
 
     private NewConnectionListenerThread mListener;
-    private AudioRecorderThread mAudioRecorder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +46,6 @@ public class ListenerActivity extends ActionBarActivity {
         mTranscriptText = (TextView) findViewById(R.id.text_transcript);
         mMessageText = (EditText) findViewById(R.id.message_entry);
         mSendButton = (Button) findViewById(R.id.button_send);
-        mToggleAudioButton = (Button) findViewById(R.id.recordToggleButton);
 
         mSendButton.setEnabled(false);
 
@@ -118,14 +110,7 @@ public class ListenerActivity extends ActionBarActivity {
     }
 
     public void onRecordToggleClick(View view) {
-        if (mAudioRecorder == null) {
-            mAudioRecorder = new AudioRecorderThread();
-            mAudioRecorder.start();
-            mToggleAudioButton.setText("Stop Recording");
-        } else {
-            mAudioRecorder.cancel();
-            mToggleAudioButton.setText("Start Recording");
-        }
+        // TODO
     }
 
     /**
@@ -189,48 +174,6 @@ public class ListenerActivity extends ActionBarActivity {
             mSendButton.setEnabled(true);
             mStatusText.setText(getString(R.string.connected_to) + " "
                     + nActiveSockets + " devices.");
-        }
-    }
-
-    private class AudioRecorderThread extends Thread {
-        private boolean mmIsRecording = false;
-
-        public AudioRecorderThread() {
-            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-        }
-
-        @Override
-        public void run() {
-            int bufferSize = AudioRecord.getMinBufferSize(8000, AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT);
-            AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, 8000,
-                    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize * 10);
-            AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, 8000,
-                    AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize * 10,
-                    AudioTrack.MODE_STREAM);
-            short[] buffer = new short[bufferSize * 10];
-            mmIsRecording = true;
-
-            try {
-                recorder.startRecording();
-                track.play();
-
-                while (mmIsRecording) {
-                    int n = recorder.read(buffer, 0, buffer.length);
-                    track.write(buffer, 0, n);
-                }
-            } catch (Throwable t) {
-                Log.e(TAG, "recording error");
-            }
-
-            recorder.stop();
-            recorder.release();
-            track.stop();
-            track.release();
-        }
-
-        public void cancel() {
-            mmIsRecording = false;
         }
     }
 
