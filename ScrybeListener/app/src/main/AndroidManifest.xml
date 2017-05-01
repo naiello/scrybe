@@ -21,6 +21,11 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".SpeechService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
     </application>
 
 </manifest>

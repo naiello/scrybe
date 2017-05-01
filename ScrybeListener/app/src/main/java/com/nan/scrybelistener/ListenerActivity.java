@@ -3,10 +3,12 @@ package com.nan.scrybelistener;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.ComponentName;
 import android.content.Intent;
-import android.icu.text.AlphabeticIndex;
+import android.content.ServiceConnection;
 import android.os.*;
 import android.support.v7.app.ActionBarActivity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,7 +18,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -24,9 +25,12 @@ import java.util.UUID;
 
 
 public class ListenerActivity extends ActionBarActivity {
-    private static final String SERVICE_NAME = "ScrybeListener";
-    private static final UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final String TAG = "ListenerActivity";
+
+
+    // UUID for the Bluetooth Serial Port Profile (SPP)
+    private static final UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private static final String BT_SERVICE_NAME = "ScrybeListener";
     private BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     private List<BluetoothSocket> mActiveSockets = new LinkedList<BluetoothSocket>();
 
@@ -35,7 +39,73 @@ public class ListenerActivity extends ActionBarActivity {
     private EditText mMessageText;
     private Button mSendButton;
 
+    // Thread to listen for incoming bluetooth connections
     private NewConnectionListenerThread mListener;
+    // Service to communicate with the Google Speech UI
+    private SpeechService mSpeechService;
+
+    private VoiceRecorder mVoiceRecorder;
+    /**
+     * Adapter class to pipe raw audio from the VoiceRecorder to the SpeechService.
+     */
+    private final VoiceRecorder.Callback mVoiceCallback = new VoiceRecorder.Callback() {
+        @Override
+        public void onVoiceStart() {
+            if (mSpeechService != null) {
+                mSpeechService.startRecognizing(mVoiceRecorder.getSampleRate());
+            }
+        }
+
+        @Override
+        public void onVoice(byte[] data, int size) {
+            if (mSpeechService != null) {
+                mSpeechService.recognize(data, size);
+            }
+        }
+
+        @Override
+        public void onVoiceEnd() {
+            if (mSpeechService != null) {
+                mSpeechService.finishRecognizing();
+            }
+        }
+    };
+
+    /**
+     * Callback function to listen for responses from the Google API
+     */
+    private final SpeechService.Listener mSpeechServiceListener = new SpeechService.Listener() {
+        @Override
+        public void onSpeechRecognized(String text, boolean isFinal) {
+            if (isFinal) {
+                mVoiceRecorder.dismiss();
+            }
+            if (text != null && !TextUtils.isEmpty(text)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        onTextReceived(text);
+                    }
+                });
+            }
+        }
+    };
+
+    /**
+     * Manages connection to the SpeechService
+     */
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            mSpeechService = SpeechService.from(service);
+            mSpeechService.addListener(mSpeechServiceListener);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mSpeechService = null;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,8 +179,23 @@ public class ListenerActivity extends ActionBarActivity {
         mMessageText.setText("");
     }
 
+    /**
+     * Called when text is received from the Google Cloud API
+     * @param text
+     */
+    public void onTextReceived(String text) {
+        mTranscriptText.append(text + "\n");
+        broadcastMessage(text);
+    }
+
     public void onRecordToggleClick(View view) {
-        // TODO
+        if (mVoiceRecorder != null) {
+            mVoiceRecorder.stop();
+            mVoiceRecorder = null;
+        } else {
+            mVoiceRecorder = new VoiceRecorder(mVoiceCallback);
+            mVoiceRecorder.start();
+        }
     }
 
     /**
@@ -120,7 +205,7 @@ public class ListenerActivity extends ActionBarActivity {
     private void broadcastMessage(String message) {
         ListIterator<BluetoothSocket> iter = mActiveSockets.listIterator();
         boolean foundDeadSockets = false;
-        Log.v(TAG, "send: " + message);
+        Log.d(TAG, "send: " + message);
 
         // Broadcast message to all active sockets
         while (iter.hasNext()) {
@@ -188,7 +273,7 @@ public class ListenerActivity extends ActionBarActivity {
         public NewConnectionListenerThread() {
             BluetoothServerSocket socket = null;
             try {
-                socket = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(SERVICE_NAME, BT_UUID);
+                socket = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(BT_SERVICE_NAME, BT_UUID);
             } catch (IOException e) {
                 Log.e(TAG, "Failed to create RFCOMM socket.");
             }

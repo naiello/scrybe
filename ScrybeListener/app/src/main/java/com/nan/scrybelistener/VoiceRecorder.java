@@ -6,6 +6,7 @@ import android.media.MediaRecorder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+
 /**
  * Class to handle recording and buffering of voice data.
  *
