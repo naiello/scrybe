@@ -1,29 +1,44 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 22
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         applicationId "com.nan.scrybelistener"
-        minSdkVersion 19
-        targetSdkVersion 25
+        minSdkVersion 22
+        targetSdkVersion 19
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
     }
+
     buildTypes {
+        debug {
+            minifyEnabled false
+            multiDexEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    packagingOptions {
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
+
 }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
-    compile 'io.grpc:grpc-all:1.3.0'
-    compile 'com.google.auth:google-auth-library-parent:0.6.1'
-    compile 'com.google.api.grpc:grpc-google-cloud-speech-v1:0.1.9'
+    compile 'io.grpc:grpc-okhttp:1.3.0'
+    compile 'io.grpc:grpc-stub:1.3.0'
+    compile 'io.grpc:grpc-protobuf-lite:1.3.0'
     compile 'com.google.auth:google-auth-library-oauth2-http:0.6.1'
+    compile 'com.android.support:appcompat-v7:22.0.+'
+    compile 'com.google.api.grpc:grpc-google-cloud-speech-v1:0.1.9'
+    compile 'com.android.support:multidex:1.0.1'
 }

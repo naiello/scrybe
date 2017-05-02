@@ -76,7 +76,7 @@ public class ListenerActivity extends ActionBarActivity {
      */
     private final SpeechService.Listener mSpeechServiceListener = new SpeechService.Listener() {
         @Override
-        public void onSpeechRecognized(String text, boolean isFinal) {
+        public void onSpeechRecognized(final String text, boolean isFinal) {
             if (isFinal) {
                 mVoiceRecorder.dismiss();
             }
