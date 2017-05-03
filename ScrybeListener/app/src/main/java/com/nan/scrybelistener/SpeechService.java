@@ -49,8 +49,6 @@ import io.grpc.okhttp.OkHttpChannelProvider;
 import io.grpc.stub.StreamObserver;
 
 public class SpeechService extends Service {
-    public SpeechService() {
-    }
 
     public interface Listener {
         void onSpeechRecognized(String text, boolean isFinal);
@@ -191,7 +189,9 @@ public class SpeechService extends Service {
      * @param size Size of the data in the buffer.
      */
     public void recognize(byte[] data, int size) {
+        //Log.d(TAG, "recognize");
         if (mRequestObserver == null) {
+            Log.d(TAG, "null request observer");
             return;
         }
 

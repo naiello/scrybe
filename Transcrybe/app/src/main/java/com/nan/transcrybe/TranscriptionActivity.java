@@ -65,13 +65,7 @@ public class TranscriptionActivity extends Activity {
     }
 
     private void onReceive(String line) {
-        if (mIsEmpty) {
-            // allow the first line received to overwrite the "listening..." text
-            mTranscriptionView.setText(line);
-            mIsEmpty = false;
-        } else {
-            mTranscriptionView.append("\n" + line);
-        }
+        mTranscriptionView.setText(line);
     }
 
     private class TranscriptionListenerThread extends Thread {

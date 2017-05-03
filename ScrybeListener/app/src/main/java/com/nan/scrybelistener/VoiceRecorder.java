@@ -56,6 +56,10 @@ public class VoiceRecorder {
             Log.e(TAG, "Cannot initialize recorder");
             throw new RuntimeException("Cannot initialize recorder.");
         }
+
+        mAudioRecord.startRecording();
+        mThread = new Thread(new ProcessVoice());
+        mThread.start();
     }
 
     public void stop() {
@@ -94,6 +98,7 @@ public class VoiceRecorder {
      * @return An {@link AudioRecord} object, or null on failure.
      */
     private AudioRecord createAudioRecord() {
+        Log.d(TAG, "CREATING AUDIO DEVICE");
         for (int sampleRate : SAMPLE_RATE_CANDIDATES) {
             final int bufferSize = AudioRecord.getMinBufferSize(sampleRate, CHANNEL, ENCODING);
             if (bufferSize == AudioRecord.ERROR_BAD_VALUE) {
@@ -105,11 +110,13 @@ public class VoiceRecorder {
 
             if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
                 mAudioBuffer = new byte[bufferSize];
+                Log.d(TAG, "CREATED");
                 return audioRecord;
             } else {
                 audioRecord.release();
             }
         }
+        Log.d(TAG, "FAILED");
         return null;
     }
 

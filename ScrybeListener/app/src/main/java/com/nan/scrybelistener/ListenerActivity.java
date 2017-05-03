@@ -51,6 +51,7 @@ public class ListenerActivity extends ActionBarActivity {
     private final VoiceRecorder.Callback mVoiceCallback = new VoiceRecorder.Callback() {
         @Override
         public void onVoiceStart() {
+            Log.d(TAG, "onVoiceStart");
             if (mSpeechService != null) {
                 mSpeechService.startRecognizing(mVoiceRecorder.getSampleRate());
             }
@@ -58,13 +59,16 @@ public class ListenerActivity extends ActionBarActivity {
 
         @Override
         public void onVoice(byte[] data, int size) {
+
             if (mSpeechService != null) {
+                //Log.d(TAG, "onVoice");
                 mSpeechService.recognize(data, size);
             }
         }
 
         @Override
         public void onVoiceEnd() {
+            Log.d(TAG, "onVoiceEnd");
             if (mSpeechService != null) {
                 mSpeechService.finishRecognizing();
             }
@@ -97,6 +101,7 @@ public class ListenerActivity extends ActionBarActivity {
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected");
             mSpeechService = SpeechService.from(service);
             mSpeechService.addListener(mSpeechServiceListener);
         }
@@ -132,6 +137,13 @@ public class ListenerActivity extends ActionBarActivity {
 
         mListener = new NewConnectionListenerThread();
         mListener.start();
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        bindService(new Intent(this, SpeechService.class), mServiceConnection, BIND_AUTO_CREATE);
     }
 
     @Override
@@ -184,15 +196,17 @@ public class ListenerActivity extends ActionBarActivity {
      * @param text
      */
     public void onTextReceived(String text) {
-        mTranscriptText.append(text + "\n");
+        mTranscriptText.setText(text);
         broadcastMessage(text);
     }
 
     public void onRecordToggleClick(View view) {
         if (mVoiceRecorder != null) {
+            Log.d(TAG, "STOP RECORDING PRESS");
             mVoiceRecorder.stop();
             mVoiceRecorder = null;
         } else {
+            Log.d(TAG, "START RECORDING PRESS");
             mVoiceRecorder = new VoiceRecorder(mVoiceCallback);
             mVoiceRecorder.start();
         }
@@ -287,6 +301,7 @@ public class ListenerActivity extends ActionBarActivity {
                 try {
                     BluetoothSocket socket = mmServerSocket.accept();
                     Log.d(TAG, "Accepted connection from " + socket.getRemoteDevice().getAddress());
+                    addActiveSocket(socket);
                 } catch (IOException e) {
                     Log.e(TAG, "Failed to accept connection.");
                 }
